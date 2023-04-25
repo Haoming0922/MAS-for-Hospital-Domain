@@ -175,11 +175,11 @@ bool State::isConflict(std::vector<actionEnum> jointAction){
             // agent and box coordinate of action a2
             coord.insert(coordEncode(agentRows[j],agentCols[j]));
             coord.insert(coordEncode(agentRows[j] + action[a2].agentRowDelta, agentCols[j] + action[a2].agentColDelta)); 
-            if(action[a1].type==Push){
+            if(action[a2].type==Push){
                 coord.insert(coordEncode(agentRows[j] + action[a2].agentRowDelta + action[a2].boxRowDelta, agentCols[j] + action[a2].agentColDelta + action[a2].boxColDelta));
                 insert++;
             }
-            if(action[a1].type==Pull){
+            if(action[a2].type==Pull){
                 coord.insert(coordEncode(agentRows[j] - action[a2].boxRowDelta, agentCols[j] - action[a2].boxColDelta));
                 insert++;
             }

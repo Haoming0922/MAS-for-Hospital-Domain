@@ -1,18 +1,21 @@
 # include "State.h"
+# include "Action.h"
 
-State::State(int RowNum, int ColNum, std::vector<int> agentRows, 
+State::State(int rowNum, int colNum, int agentNum, int boxNum, std::vector<int> agentRows, 
              std::vector<int> agentCols, std::vector<std::vector<char>> boxes){
-    this->RowNum = RowNum;
-    this->ColNum = ColNum; 
+    this->rowNum = rowNum;
+    this->colNum = colNum; 
+    this->agentNum = agentNum;
+    this->boxNum = boxNum;
     this->agentRows = agentRows;
     this->agentCols = agentCols;
     this->boxes = boxes;
 }
 
-State::State(State* parent, std::vector<actionEnum> jointAction){
+State::State(State* parent, std::vector<ActionEnum> jointAction){
     // copy parent
-    this->RowNum = parent->RowNum;
-    this->ColNum = parent->ColNum;
+    this->rowNum = parent->rowNum;
+    this->colNum = parent->colNum;
     this->agentRows = parent->agentRows;
     this->agentCols = parent->agentCols;
     this->boxes = parent->boxes;
@@ -76,9 +79,9 @@ State::State(State* parent, std::vector<actionEnum> jointAction){
 
 
 
-InitialState::InitialState(int RowNum, int ColNum,std::vector<int> agentRows, std::vector<int> agentCols, 
+InitialState::InitialState(int rowNum, int colNum, int agentNum, int boxNum, std::vector<int> agentRows, std::vector<int> agentCols, 
         std::vector<std::vector<char>> boxes,std::vector<Color> agentColors, std::vector<Color> boxColor,
-        std::vector<std::vector<bool>> walls, std::vector<std::vector<char>> goals) : State(RowNum,ColNum,agentRows,agentCols,boxes){
+        std::vector<std::vector<bool>> walls, std::vector<std::vector<char>> goals) : State(rowNum,colNum,agentNum,boxNum,agentRows,agentCols,boxes){
     this->agentColors = agentColors;
     this->boxColor = boxColor; 
     this->walls = walls;
@@ -92,11 +95,11 @@ InitialState::InitialState(int RowNum, int ColNum,std::vector<int> agentRows, st
 
 
 bool State::isGoalState(){
-    for(int row = 0; row<RowNum; row++){
-        for(int col = 0; col<ColNum; col++){
+    for(int row = 0; row<rowNum; row++){
+        for(int col = 0; col<colNum; col++){
             // agent
             if(static_cast<InitialState*>(initialState)->goals[row][col] >= '0' && static_cast<InitialState*>(initialState)->goals[row][col] <= '9'){
-                int agentIdx = static_cast<InitialState*>(initialState)->goals[row][col];
+                int agentIdx = static_cast<InitialState*>(initialState)->goals[row][col] - '0';
                 if(agentRows[agentIdx] != row || agentRows[agentIdx] != col) return false;
             }
             // box
@@ -110,19 +113,20 @@ bool State::isGoalState(){
 
 
 
+
 std::vector<State*> State::getExpandState(){
 
     std::vector<State*> result_state;
     
     // get applicable actions for each agent
-    std::vector<std::vector<actionEnum>> applicableAction;
+    std::vector<std::vector<ActionEnum>> applicableAction;
     for(size_t i=0;i<this->agentRows.size();i++) applicableAction.push_back(getApplicableAction(i));
     
     std::vector<size_t> actionPermutation(agentRows.size(),0);
     bool done = false;
     while(true){
         // join actions 
-        std::vector<actionEnum> jointAction;
+        std::vector<ActionEnum> jointAction;
         for(size_t i=0;i<this->agentRows.size();i++){
             jointAction.emplace_back(applicableAction[i][actionPermutation[i]]);
         }
@@ -151,15 +155,15 @@ std::vector<State*> State::getExpandState(){
 
 
 
-bool State::isConflict(std::vector<actionEnum> jointAction){
+bool State::isConflict(std::vector<ActionEnum> jointAction){
     if(jointAction.size()==1) return false;
     
     // check every two-action are conflict or not
     std::unordered_set<int> coord {}; // coordinate encode = i*#col + j
     for(size_t i=0;i<jointAction.size()-1;i++){
         for(size_t j=i+1;j<jointAction.size();j++){
-            actionEnum a1 = jointAction[i];
-            actionEnum a2 = jointAction[j];
+            ActionEnum a1 = jointAction[i];
+            ActionEnum a2 = jointAction[j];
 
             if(a1==OpNo || a2==OpNo) continue;
             
@@ -177,11 +181,11 @@ bool State::isConflict(std::vector<actionEnum> jointAction){
             coord.insert(coordEncode(agentRows[j] + action[a2].agentRowDelta, agentCols[j] + action[a2].agentColDelta)); 
             if(action[a2].type==Push){
                 coord.insert(coordEncode(agentRows[j] + action[a2].agentRowDelta + action[a2].boxRowDelta, agentCols[j] + action[a2].agentColDelta + action[a2].boxColDelta));
-                insert++;
+                insert ++;
             }
             if(action[a2].type==Pull){
                 coord.insert(coordEncode(agentRows[j] - action[a2].boxRowDelta, agentCols[j] - action[a2].boxColDelta));
-                insert++;
+                insert ++;
             }
             size2 = coord.size();
             
@@ -194,8 +198,8 @@ bool State::isConflict(std::vector<actionEnum> jointAction){
 }
 
 
-std::vector<actionEnum> State::getApplicableAction(int agentIdx){
-    std::vector<actionEnum> result_action;
+std::vector<ActionEnum> State::getApplicableAction(int agentIdx){
+    std::vector<ActionEnum> result_action;
     for(auto candidate_action:action){
         switch(candidate_action.second.type){
             case(NoOp):
@@ -228,7 +232,7 @@ std::vector<actionEnum> State::getApplicableAction(int agentIdx){
 
 bool State::isFree(int row, int col){
     // check if out of map
-    if( row<0 || row>=RowNum || col<0 || col>=ColNum) return false;
+    if( row<0 || row>=rowNum || col<0 || col>=colNum) return false;
     // check if an agent occupys
     for(size_t i=0; i<agentRows.size(); i++){
         if(row==agentRows[i] && col==agentCols[i]) return false;
@@ -236,14 +240,14 @@ bool State::isFree(int row, int col){
     // check if a wall occupys
     if(static_cast<InitialState*>(initialState)->walls[row][col]) return false;
     // check if a box occupys
-    if(boxes[row][col]) return false;
+    if(boxes[row][col] != 0) return false;
     
     return true;
 }
 
 
 
-bool State::isNear(int agentIdx, actionField a){
+bool State::isNear(int agentIdx, ActionField a){
     // box is at the correct position to be push/pull
     // box and agent are of the same color
     int boxCol, boxRow;
@@ -267,8 +271,8 @@ bool State::isNear(int agentIdx, actionField a){
 }
 
 
-std::vector<std::vector<actionEnum>> State::extractPlan(){
-    std::vector<std::vector<actionEnum>> plan;
+std::vector<std::vector<ActionEnum>> State::extractPlan(){
+    std::vector<std::vector<ActionEnum>> plan;
     State* s = this;
     plan.resize(s->depth);
     while(s->depth != 0){
@@ -317,3 +321,4 @@ size_t StateHash::myHash_char(const std::vector<char>& v) const{
     }
     return hash;
 }
+

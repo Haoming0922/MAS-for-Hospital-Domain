@@ -19,7 +19,7 @@
     and +1 in the horisontal direction is right (E).
 */
 
-enum actionEnum{
+enum ActionEnum{
     OpNo,
     
     MoveN, MoveS, MoveW, MoveE,
@@ -37,7 +37,12 @@ enum actionEnum{
     
 enum OpType {NoOp, Move, Push, Pull};
 
-struct actionField{
+struct ActionCBS{
+    ActionEnum a;
+    int boxID;
+};
+
+struct ActionField{
     std::string name;
     OpType type;
     int agentRowDelta;
@@ -47,6 +52,6 @@ struct actionField{
 };
 
 
-extern std::map<actionEnum,struct actionField> action;
+extern std::map<ActionEnum,struct ActionField> action;
 
 #endif

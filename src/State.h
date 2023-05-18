@@ -4,16 +4,18 @@
 # include <iostream>
 # include <vector>
 # include <unordered_set>
-#include <functional>  // For std::hash
+# include <functional>  // For std::hash
 # include <stdexcept>
 # include "Color.h"
 # include "Action.h"
 
 class State{
     public:
-        int RowNum;
-        int ColNum;
-        int depth;
+        int rowNum;
+        int colNum;
+        int agentNum;
+        int boxNum;
+        
         // agentRows[i] = r means agent i at row r
         std::vector<int> agentRows;
         std::vector<int> agentCols;
@@ -22,30 +24,31 @@ class State{
         
         State* parent;
         State* initialState;
+        int depth;
         
-        std::vector<actionEnum> jointAction;
-        
-        State(int RowNum, int ColNum, std::vector<int> agentRows, std::vector<int> agentCols, 
+        State(int rowNum, int colNum, int agentNum, int boxNum, std::vector<int> agentRows, std::vector<int> agentCols, 
               std::vector<std::vector<char>> boxes);
-        State(State* parent, std::vector<actionEnum> jointAction);
-        std::vector<std::vector<actionEnum>> extractPlan();
-        int getDepth(){return this->depth;};
+        State(State* parent, std::vector<ActionEnum> jointAction);
+        
+        std::vector<std::vector<ActionEnum>> extractPlan();
         bool isGoalState();
-        std::vector<State*> getExpandState();
-        bool isConflict(std::vector<actionEnum> jointAction);
-        std::vector<actionEnum> getApplicableAction(int agentIdx);
-        bool isFree(int row, int col);
-        bool isNear(int agentIdx, actionField a);
+        std::vector<State*> getExpandState();     
+        int coordEncode(int x, int y) {return x*colNum + y;};
         
     private:
-        int coordEncode(int x, int y) {return x*ColNum + y;};
+        std::vector<ActionEnum> jointAction;
+   
+        std::vector<ActionEnum> getApplicableAction(int agentIdx);
+        bool isConflict(std::vector<ActionEnum> jointAction);
+        bool isFree(int row, int col);
+        bool isNear(int agentIdx, ActionField a);
 };
 
 
-// initial state
+// initial state: constains all information of the level (walls, goals)
 class InitialState : public State{
     public:
-        InitialState(int RowNum, int ColNum, std::vector<int> agentRows, std::vector<int> agentCols, 
+        InitialState(int rowNum, int colNum, int agentNum, int boxNum, std::vector<int> agentRows, std::vector<int> agentCols, 
         std::vector<std::vector<char>> boxes, std::vector<Color> agentColors, std::vector<Color> boxColor,
         std::vector<std::vector<bool>> walls, std::vector<std::vector<char>> goals);
         // agentColors[i] = color means agent i is color
@@ -55,6 +58,8 @@ class InitialState : public State{
         // same as box[][]
         std::vector<std::vector<bool>> walls;
         std::vector<std::vector<char>> goals;
+        
+        std::vector<std::vector<int>> goalIDs;
 };
 
 
@@ -69,7 +74,6 @@ struct StateEqual{
 };
 
 
-typedef std::unordered_set<State*,StateHash,StateEqual> MySet;
-
+typedef std::unordered_set<State*,StateHash,StateEqual> MyStateSet;
 
 #endif

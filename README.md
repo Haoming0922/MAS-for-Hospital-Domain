@@ -2,7 +2,7 @@
 
 
 ## Feature
-- Implemented **conflict-based search**. It consists of high level node for conflict resolving and low level search for single agent planning.
+- Implemented **conflict-based search**. It consists of high-level nodes for conflict resolution and low-level heuristic search for single-agent planning.
 - For low level search, use **astar heuristic search**: *h = goalCounts * 100 - sum of shortest distance between boxes to goals - the minimal distance between agent and its boxes*
 
 
